@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mi Ficha de Validación · De la idea a la pantalla</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;500;700&family=Roboto:wght@300;400;500;700&display=swap');
+
+:root{
+  --verde-claro:#34d399; --verde-medio:#10b981; --verde-oscuro:#059669;
+  --cian:#00C4FF; --azul:#4E54F5; --violeta:#8A3FFC; --rosa:#FF66B2;
+  --d1:#10b981; --d2:#4E54F5; --d3:#8A3FFC;
+}
+*{box-sizing:border-box}
+body{
+  font-family:'Roboto',sans-serif;
+  background:linear-gradient(135deg,#f0f4f8 0%,#e2e8f0 100%);
+  color:#1e293b; min-height:100vh; -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3,.ubuntu{font-family:'Ubuntu',sans-serif}
+
+.glass{
+  background:rgba(255,255,255,0.65);
+  backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+  border:1px solid rgba(255,255,255,0.4);
+  box-shadow:0 8px 32px 0 rgba(31,38,135,0.05);
+}
+
+/* Barra de progreso superior */
+.progress-track{height:10px;background:rgba(203,213,225,0.5);border-radius:99px;overflow:hidden}
+.progress-fill{height:100%;width:0%;border-radius:99px;
+  background:linear-gradient(90deg,#6ee7b7,#34d399,#10b981,#4E54F5,#8A3FFC);
+  background-size:200% 100%; animation:shift 3s linear infinite;
+  transition:width 0.6s cubic-bezier(0.4,0,0.2,1);}
+@keyframes shift{0%{background-position:0% 50%}100%{background-position:200% 50%}}
+
+/* Tarjetas de día */
+.day-card{transition:all .4s cubic-bezier(0.4,0,0.2,1);border-radius:28px;overflow:hidden}
+.day-card.locked{opacity:.55}
+.day-card.locked .day-body{filter:grayscale(.4)}
+
+.day-ribbon{padding:4px 14px;border-radius:99px;font-size:11px;font-weight:800;
+  text-transform:uppercase;letter-spacing:.12em;display:inline-flex;align-items:center;gap:6px}
+
+.field-label{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:#64748b;margin-bottom:6px;display:block}
+.hint{font-size:12.5px;color:#94a3b8;font-style:italic;margin-top:4px;line-height:1.4}
+
+textarea,input[type=text]{
+  width:100%;background:rgba(255,255,255,0.85);border:1.5px solid #e2e8f0;border-radius:14px;
+  padding:12px 14px;font-family:'Roboto',sans-serif;font-size:14.5px;color:#1e293b;
+  transition:all .2s ease;resize:vertical;line-height:1.5;
+}
+textarea:focus,input[type=text]:focus{outline:none;border-color:var(--verde-medio);
+  box-shadow:0 0 0 4px rgba(16,185,129,0.1);background:white}
+textarea.filled,input.filled{border-color:var(--verde-claro);background:rgba(236,253,245,0.7)}
+
+/* Prompt copiable */
+.prompt-box{background:#0f172a;color:#e2e8f0;border-radius:16px;padding:16px 18px;
+  font-size:13px;line-height:1.55;position:relative;font-family:'Roboto',sans-serif}
+.prompt-box .tag{font-size:10px;font-weight:900;letter-spacing:.15em;text-transform:uppercase;
+  color:#34d399;display:block;margin-bottom:8px}
+.copy-btn{position:absolute;top:12px;right:12px;background:rgba(255,255,255,0.1);
+  border:1px solid rgba(255,255,255,0.2);color:#cbd5e1;border-radius:10px;padding:6px 12px;
+  font-size:11px;font-weight:700;cursor:pointer;transition:all .2s}
+.copy-btn:hover{background:var(--verde-medio);color:white;border-color:transparent}
+.placeholder-chip{color:#fbbf24;font-weight:600}
+
+/* MoSCoW pills (día 3) */
+.moscow-pill{padding:3px 10px;border-radius:8px;font-size:11px;font-weight:800;cursor:pointer;
+  border:1.5px solid transparent;transition:all .2s;user-select:none}
+.m-must{background:#fee2e2;color:#991b1b} .m-should{background:#fef3c7;color:#92400e}
+.m-could{background:#dbeafe;color:#1e40af} .m-wont{background:#f1f5f9;color:#475569}
+.moscow-pill.dim{opacity:.35}
+
+.seal{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:16px;font-weight:900;color:white;flex-shrink:0}
+
+.btn-primary{background:linear-gradient(45deg,var(--verde-oscuro),var(--verde-medio));color:white;
+  border:none;border-radius:14px;padding:12px 22px;font-weight:700;font-family:'Ubuntu';cursor:pointer;
+  transition:all .3s;font-size:14px}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(16,185,129,0.3)}
+.btn-ghost{background:rgba(255,255,255,0.7);border:1.5px solid #e2e8f0;border-radius:14px;
+  padding:12px 22px;font-weight:700;font-family:'Ubuntu';cursor:pointer;transition:all .2s;font-size:14px;color:#475569}
+.btn-ghost:hover{border-color:var(--verde-medio);color:var(--verde-oscuro)}
+
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(120px);
+  background:#0f172a;color:white;padding:14px 24px;border-radius:14px;font-weight:600;font-size:14px;
+  z-index:999;transition:transform .4s cubic-bezier(0.175,0.885,0.32,1.275);box-shadow:0 10px 30px rgba(0,0,0,0.2)}
+.toast.show{transform:translateX(-50%) translateY(0)}
+
+.example-toggle{font-size:12px;font-weight:700;color:var(--verde-oscuro);cursor:pointer;
+  display:inline-flex;align-items:center;gap:4px;padding:4px 0}
+.example-box{background:rgba(16,185,129,0.06);border-left:3px solid var(--verde-claro);
+  border-radius:0 12px 12px 0;padding:10px 14px;font-size:13px;color:#334155;line-height:1.5;margin-top:8px}
+
+.field-block{margin-bottom:20px}
+@media print{
+  .no-print{display:none !important}
+  body{background:white}
+  .day-card.locked{opacity:1}
+  .glass{background:white;box-shadow:none;border:1px solid #e2e8f0}
+}
+::-webkit-scrollbar{width:7px}
+::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:10px}
+</style>
+</head>
+<body class="pb-24">
+
+<header class="max-w-4xl mx-auto px-5 pt-10 pb-6">
+  <div class="flex items-center gap-2 mb-3">
+    <span class="text-xs font-bold tracking-[0.2em] uppercase text-slate-400 ubuntu">Emprende y Avanza · De la idea a la pantalla · Málaga</span>
+  </div>
+  <h1 class="text-3xl md:text-4xl font-bold text-slate-800 leading-tight">
+    Mi Ficha de Validación <span class="text-emerald-600">en 1 página</span>
+  </h1>
+  <p class="text-slate-500 mt-2 text-[15px] leading-relaxed max-w-2xl">
+    Tu idea es una hipótesis hasta que un cliente real la comprueba. Este documento crece contigo: una sección por sesión. Empieza por la Sesión 1; la Sesión 2 se activa cuando empieces a rellenar la primera.
+  </p>
+  <div class="glass rounded-2xl p-4 mt-5 flex flex-col sm:flex-row gap-3">
+    <div class="flex-1"><label class="field-label">Tu nombre</label>
+      <input type="text" id="ownerName" placeholder="Quién está detrás del proyecto" oninput="markFilled(this);save()"></div>
+    <div class="flex-1"><label class="field-label">Tu proyecto</label>
+      <input type="text" id="bizName" placeholder="Nombre o idea de tu proyecto" oninput="markFilled(this);save()"></div>
+  </div>
+  <div class="mt-6">
+    <div class="flex justify-between items-end mb-2">
+      <span class="field-label !mb-0">Progreso del curso</span>
+      <span class="text-sm font-bold text-emerald-600 ubuntu" id="progressLabel">0% · empieza por tu idea</span>
+    </div>
+    <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+  </div>
+</header>
+
+<main class="max-w-4xl mx-auto px-5 space-y-6">
+  <section class="day-card glass" data-day="1">
+    <div class="day-body p-6">
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-3">
+          <div class="seal" style="background:linear-gradient(45deg,#059669,#34d399)">1</div>
+          <div>
+            <span class="day-ribbon" style="background:#dcfce7;color:#166534">Sesión 1 · ¿Tu idea tiene cliente?</span>
+            <h2 class="text-xl font-bold text-slate-800 mt-1">Problema, cliente, valor y primera prueba</h2>
+          </div>
+        </div>
+        <span class="text-2xl" id="seal-1">🔓</span>
+      </div>
+
+      <div class="rounded-2xl p-4 mb-6" style="background:#f0fdf4;border:1.5px solid #86efac">
+        <div class="field-label" style="color:#166534;margin-bottom:4px">📋 Tus prompts de hoy, en orden</div>
+        <p class="text-sm text-slate-600 mb-3">Pulsa <b>Copiar</b>, pégalo en Gemini o Claude y cambia solo lo amarillo. Los 5 Porqués con una persona (sin IA) los haces antes, en parejas.</p>
+        <div class="prompt-box mb-3">
+        <button class="copy-btn" onclick="copyPrompt(this)">Copiar</button>
+        <span class="tag">Bloque 2 · Fabrica tu experto</span>
+        <span data-prompt>Actúa como <span class="placeholder-chip">[ROL: el experto que necesitas y por qué es de los mejores]</span>.<br>Mi proyecto: <span class="placeholder-chip">[qué quiero hacer, en 2 frases]</span>.<br>Mi cliente: <span class="placeholder-chip">[a quién se lo quiero vender, aunque aún no lo tenga claro]</span>.<br>Mi situación: <span class="placeholder-chip">[dinero, tiempo y equipo que tengo de verdad]</span>.<br>Reglas: sé concreto, no me des listas genéricas, y si te falta información, pregúntame antes de responder.<br>Tarea: hazme las 5 preguntas más incómodas sobre esta idea.</span>
+      </div><div class="prompt-box mb-3">
+        <button class="copy-btn" onclick="copyPrompt(this)">Copiar</button>
+        <span class="tag">Bloque 3 · Tus 5 Porqués con tu experto</span>
+        <span data-prompt>Actúa como un entrevistador escéptico. Voy a contarte mi idea de negocio audiovisual. Hazme los 5 porqués: UNA pregunta cada vez, sin darme tú la respuesta. Si mi respuesta habla de mí (equipo, pasión, calidad) y no de mi cliente, dímelo y repregunta. Al terminar, resume mi valor real en una frase.</span>
+      </div><div class="prompt-box mb-3">
+        <button class="copy-btn" onclick="copyPrompt(this)">Copiar</button>
+        <span class="tag">Bloque 4 · Tu Value Proposition Canvas</span>
+        <span data-prompt>Con lo que sabes de mi proyecto, haz mi Value Proposition Canvas.<br>Primero: tareas, dolores y alegrías de mi cliente (elige el más concreto).<br>Luego: cómo mi oferta responde a cada dolor. Lo que no responda, márcalo para quitarlo.<br>Pregúntame lo que necesites.</span>
+      </div><div class="prompt-box mb-3">
+        <button class="copy-btn" onclick="copyPrompt(this)">Copiar</button>
+        <span class="tag">Bloque 4 · Tu frase de propuesta de valor</span>
+        <span data-prompt>Con todo lo anterior, redacta mi propuesta de valor con esta fórmula: “Ayudo a <span class="placeholder-chip">[quién]</span> a <span class="placeholder-chip">[resultado]</span> sin <span class="placeholder-chip">[dolor]</span>, a diferencia de <span class="placeholder-chip">[alternativa]</span>.”</span>
+      </div><div class="prompt-box mb-3">
+        <button class="copy-btn" onclick="copyPrompt(this)">Copiar</button>
+        <span class="tag">Bloque 5 · Tu Test Card</span>
+        <span data-prompt>Mi hipótesis es: <span class="placeholder-chip">[la más arriesgada]</span>.<br>Ayúdame a crear una Test Card:<br>1. Creemos que...<br>2. Para comprobarlo haremos... (algo barato, esta semana)<br>3. Y mediremos...<br>4. Estamos en lo cierto si... (con un número)<br>Si algo no es medible, dímelo.</span>
+      </div>
+      </div>
+
+      <h3 class="text-lg font-bold mt-8 mb-3" style="color:#166534">Bloque 0 · Tu idea, tal cual la tenías esta mañana</h3>
+      <div class="field-block">
+        <label class="field-label">Mi idea en dos líneas (sin pulir)</label>
+        <textarea rows="2" data-field placeholder="Mi idea es [qué hago] para [quién]. Lo hago porque [por qué me importa]." oninput="markFilled(this);save()"></textarea><div class="hint">No la mejores: al final de la sesión la comparas con la versión nueva.</div>
+      </div>
+
+      <h3 class="text-lg font-bold mt-8 mb-3" style="color:#166534">Bloque 3 · Mis 5 Porqués</h3>
+      <p class="text-sm text-slate-500 mb-4">Una respuesta por nivel, con palabras de tu cliente. Si hablas de tu cámara o tu pasión, vuelve a empezar: tiene que haber un cliente dentro.</p>
+      <div class="field-block">
+        <label class="field-label">1 · ¿Por qué te contratarían / te comprarían?</label>
+        <textarea rows="2" data-field placeholder="Una respuesta, con palabras de tu cliente." oninput="markFilled(this);save()"></textarea>
+      </div><div class="field-block">
+        <label class="field-label">2 · ¿Por qué importa eso?</label>
+        <textarea rows="2" data-field placeholder="Una respuesta, con palabras de tu cliente." oninput="markFilled(this);save()"></textarea>
+      </div><div class="field-block">
+        <label class="field-label">3 · ¿Por qué les preocupa a ellos?</label>
+        <textarea rows="2" data-field placeholder="Una respuesta, con palabras de tu cliente." oninput="markFilled(this);save()"></textarea>
+      </div><div class="field-block">
+        <label class="field-label">4 · ¿Por qué es un problema para ellos?</label>
+        <textarea rows="2" data-field placeholder="Una respuesta, con palabras de tu cliente." oninput="markFilled(this);save()"></textarea>
+      </div><div class="field-block">
+        <label class="field-label">5 · ¿Por qué duele de verdad?</label>
+        <textarea rows="2" data-field placeholder="Una respuesta, con palabras de tu cliente." oninput="markFilled(this);save()"></textarea>
+      </div>
+      <div class="field-block">
+        <label class="field-label">Mi valor real: mi 5.ª respuesta en una frase</label>
+        <textarea rows="2" data-field placeholder="No vendo [producto]: vendo [resultado en la vida de mi cliente]." oninput="markFilled(this);save()"></textarea><div class="hint">Test: ¿habla de mi cliente? ¿lo podría decir mi competencia? ¿lo he oído de un cliente real o es una hipótesis?</div>
+      </div>
+
+      <h3 class="text-lg font-bold mt-8 mb-3" style="color:#166534">Bloque 4 · Mi cliente y mi propuesta de valor</h3>
+      <div class="field-block">
+        <label class="field-label">Mi primer cliente (el que más sufre y al que puedo llegar esta semana)</label>
+        <textarea rows="2" data-field placeholder="Ej.: restaurantes de 40-80 cubiertos del centro de Málaga." oninput="markFilled(this);save()"></textarea><div class="hint">No “empresas” ni “todo el mundo”.</div>
+      </div>
+      <div class="field-block">
+        <label class="field-label">Sus tareas: qué intenta conseguir</label>
+        <textarea rows="2" data-field placeholder="Tareas del día a día de mi cliente." oninput="markFilled(this);save()"></textarea>
+      </div>
+      <div class="field-block">
+        <label class="field-label">Sus dolores: qué le frustra, le cuesta o le da miedo</label>
+        <textarea rows="2" data-field placeholder="Dolores concretos." oninput="markFilled(this);save()"></textarea>
+      </div>
+      <div class="field-block">
+        <label class="field-label">Sus alegrías: qué desea o le haría feliz</label>
+        <textarea rows="2" data-field placeholder="Alegrías concretas." oninput="markFilled(this);save()"></textarea>
+      </div>
+      <div class="field-block">
+        <label class="field-label">Mi oferta: qué calma cada dolor (y qué quito porque no responde a ninguno)</label>
+        <textarea rows="3" data-field placeholder="Lo que no responde a un dolor o a una alegría, sobra." oninput="markFilled(this);save()"></textarea>
+      </div>
+      <div class="rounded-2xl p-4 mb-4" style="background:rgba(16,185,129,0.07);border:1.5px dashed #34d399">
+        <label class="field-label" style="color:#059669">★ Mi propuesta de valor en una frase</label>
+        <textarea rows="2" data-field placeholder="Ayudo a [quién] a [resultado] sin [dolor], a diferencia de [alternativa]." oninput="markFilled(this);save()" style="background:white"></textarea>
+        <div class="hint">Que suene a ti, no a folleto.</div>
+      </div>
+
+      <h3 class="text-lg font-bold mt-8 mb-3" style="color:#166534">Bloque 5 · Mis hipótesis y mi primera prueba</h3>
+      <div class="field-block">
+        <label class="field-label">Lo que CREO (mis hipótesis)</label>
+        <textarea rows="4" data-field placeholder="Una por línea: “Los restaurantes pagarían por…”, “Me eligen por…”, “Puedo entregar en…”" oninput="markFilled(this);save()"></textarea><div class="hint">Todo lo que no has oído de un cliente es una hipótesis.</div>
+      </div>
+      <div class="field-block">
+        <label class="field-label">La más arriesgada (alto impacto y poco que sé)</label>
+        <textarea rows="2" data-field placeholder="Si esta es falsa, el proyecto no funciona." oninput="markFilled(this);save()"></textarea>
+      </div>
+      <div class="rounded-2xl p-4 mb-4" style="background:rgba(16,185,129,0.05);border:1.5px solid #bbf7d0">
+        <div class="field-label" style="color:#166534">Mi Test Card</div>
+        <div class="field-block">
+        <label class="field-label">Creemos que…</label>
+        <textarea rows="2" data-field placeholder="Mi hipótesis, en una frase." oninput="markFilled(this);save()"></textarea>
+      </div>
+        <div class="field-block">
+        <label class="field-label">Para comprobarlo haremos…</label>
+        <textarea rows="2" data-field placeholder="Algo barato, esta semana: un teaser, un formulario, una conversación…" oninput="markFilled(this);save()"></textarea>
+      </div>
+        <div class="field-block">
+        <label class="field-label">Y mediremos…</label>
+        <textarea rows="2" data-field placeholder="Qué número voy a contar." oninput="markFilled(this);save()"></textarea>
+      </div>
+        <div class="field-block">
+        <label class="field-label">Estamos en lo cierto si…</label>
+        <textarea rows="2" data-field placeholder="Con un número y una fecha. No “si les gusta”." oninput="markFilled(this);save()"></textarea>
+      </div>
+      </div>
+
+      <h3 class="text-lg font-bold mt-8 mb-3" style="color:#9a3412">Tarea · Mis 5 conversaciones con clientes reales</h3>
+      <p class="text-sm text-slate-500 mb-4">Ni amigos ni familia. Pregunta por el pasado, no por el futuro: «¿Cuándo fue la última vez que…? ¿Cómo lo hiciste? ¿Cuánto costó?». Apunta lo que te cuentan, literal.</p>
+      <div class="rounded-2xl p-4 mb-3" style="background:rgba(16,185,129,0.05);border:1.5px solid #bbf7d0">
+        <div class="field-label" style="color:#166534">Conversación 1</div>
+        <div class="field-block" style="margin-bottom:10px">
+          <label class="field-label">Quién es (perfil, no nombre)</label>
+          <textarea rows="1" data-field placeholder="Ej.: dueña de un restaurante de 60 cubiertos en el centro" oninput="markFilled(this);save()"></textarea>
+        </div>
+        <div class="field-block" style="margin-bottom:10px">
+          <label class="field-label">Qué me contó (literal, con sus palabras)</label>
+          <textarea rows="3" data-field placeholder="La última vez que hizo X, cómo lo hizo, cuánto le costó…" oninput="markFilled(this);save()"></textarea>
+        </div>
+        <div class="field-block" style="margin-bottom:0">
+          <label class="field-label">Lo que me sorprendió</label>
+          <textarea rows="1" data-field placeholder="Algo que no esperaba." oninput="markFilled(this);save()"></textarea>
+        </div>
+      </div><div class="rounded-2xl p-4 mb-3" style="background:rgba(16,185,129,0.05);border:1.5px solid #bbf7d0">
+        <div class="field-label" style="color:#166534">Conversación 2</div>
+        <div class="field-block" style="margin-bottom:10px">
+          <label class="field-label">Quién es (perfil, no nombre)</label>
+          <textarea rows="1" data-field placeholder="Ej.: dueña de un restaurante de 60 cubiertos en el centro" oninput="markFilled(this);save()"></textarea>
+        </div>
+        <div class="field-block" style="margin-bottom:10px">
+          <label class="field-label">Qué me contó (literal, con sus palabras)</label>
+          <textarea rows="3" data-field placeholder="La última vez que hizo X, cómo lo hizo, cuánto le costó…" oninput="markFilled(this);save()"></textarea>
+        </div>
+        <div class="field-block" style="margin-bottom:0">
+          <label class="field-label">Lo que me sorprendió</label>
+          <textarea rows="1" data-field placeholder="Algo que no esperaba." oninput="markFilled(this);save()"></textarea>
+        </div>
+      </div><div class="rounded-2xl p-4 mb-3" style="background:rgba(16,185,129,0.05);border:1.5px solid #bbf7d0">
+        <div class="field-label" style="color:#166534">Conversación 3</div>
+        <div class="field-block" style="margin-bottom:10px">
+          <label class="field-label">Quién es (perfil, no nombre)</label>
+          <textarea rows="1" data-field placeholder="Ej.: dueña de un restaurante de 60 cubiertos en el centro" oninput="markFilled(this);save()"></textarea>
+        </div>
+        <div class="field-block" style="margin-bottom:10px">
+          <label class="field-label">Qué me contó (literal, con sus palabras)</label>
+          <textarea rows="3" data-field placeholder="La última vez que hizo X, cómo lo hizo, cuánto le costó…" oninput="markFilled(this);save()"></textarea>
+        </div>
+        <div class="field-block" style="margin-bottom:0">
+          <label class="field-label">Lo que me sorprendió</label>
+          <textarea rows="1" data-field placeholder="Algo que no esperaba." oninput="markFilled(this);save()"></textarea>
+        </div>
+      </div><div class="rounded-2xl p-4 mb-3" style="background:rgba(16,185,129,0.05);border:1.5px solid #bbf7d0">
+        <div class="field-label" style="color:#166534">Conversación 4</div>
+        <div class="field-block" style="margin-bottom:10px">
+          <label class="field-label">Quién es (perfil, no nombre)</label>
+          <textarea rows="1" data-field placeholder="Ej.: dueña de un restaurante de 60 cubiertos en el centro" oninput="markFilled(this);save()"></textarea>
+        </div>
+        <div class="field-block" style="margin-bottom:10px">
+          <label class="field-label">Qué me contó (literal, con sus palabras)</label>
+          <textarea rows="3" data-field placeholder="La última vez que hizo X, cómo lo hizo, cuánto le costó…" oninput="markFilled(this);save()"></textarea>
+        </div>
+        <div class="field-block" style="margin-bottom:0">
+          <label class="field-label">Lo que me sorprendió</label>
+          <textarea rows="1" data-field placeholder="Algo que no esperaba." oninput="markFilled(this);save()"></textarea>
+        </div>
+      </div><div class="rounded-2xl p-4 mb-3" style="background:rgba(16,185,129,0.05);border:1.5px solid #bbf7d0">
+        <div class="field-label" style="color:#166534">Conversación 5</div>
+        <div class="field-block" style="margin-bottom:10px">
+          <label class="field-label">Quién es (perfil, no nombre)</label>
+          <textarea rows="1" data-field placeholder="Ej.: dueña de un restaurante de 60 cubiertos en el centro" oninput="markFilled(this);save()"></textarea>
+        </div>
+        <div class="field-block" style="margin-bottom:10px">
+          <label class="field-label">Qué me contó (literal, con sus palabras)</label>
+          <textarea rows="3" data-field placeholder="La última vez que hizo X, cómo lo hizo, cuánto le costó…" oninput="markFilled(this);save()"></textarea>
+        </div>
+        <div class="field-block" style="margin-bottom:0">
+          <label class="field-label">Lo que me sorprendió</label>
+          <textarea rows="1" data-field placeholder="Algo que no esperaba." oninput="markFilled(this);save()"></textarea>
+        </div>
+      </div>
+
+      <p class="text-sm text-slate-500 mb-3 mt-4">Cuando termines la tarea, pulsa <b>Guardar copia</b> (abajo a la derecha) y tráela a la próxima sesión.</p>
+    </div>
+  </section>
+
+  <section class="day-card glass" data-day="2">
+    <div class="day-body p-6">
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-3">
+          <div class="seal" style="background:linear-gradient(45deg,#4E54F5,#00C4FF)">2</div>
+          <div>
+            <span class="day-ribbon" style="background:#e0e7ff;color:#3730a3">Sesión 2 · Conoce a tu cliente</span>
+            <h2 class="text-xl font-bold text-slate-800 mt-1">De la calle a tu ICP y tu buyer persona</h2>
+          </div>
+        </div>
+        <span class="text-2xl" id="seal-2">🔒</span>
+      </div>
+
+      <div class="rounded-2xl p-4 mb-6" style="background:#eef2ff;border:1.5px solid #a5b4fc">
+        <div class="field-label" style="color:#3730a3;margin-bottom:4px">📋 Tus prompts de hoy, en orden</div>
+        <p class="text-sm text-slate-600 mb-3">Pega tus notas <b>sin nombres, teléfonos ni emails</b>: solo perfiles. Pulsa <b>Copiar</b>, pégalo en tu experto y cambia lo amarillo.</p>
+        <div class="prompt-box mb-3">
+        <button class="copy-btn" onclick="copyPrompt(this)">Copiar</button>
+        <span class="tag">Bloque 0 · Tus notas, analizadas</span>
+        <span data-prompt>Te paso las notas de mis 5 conversaciones con posibles clientes (sin nombres, solo perfiles). Dime:<br>1. Qué se repite en 3 o más.<br>2. Qué contradice mis hipótesis.<br>3. Cuál parece más cerca de comprar y por qué.<br>4. 3 preguntas que debí hacer.<br>Cita la conversación de cada dato y no inventes nada que no esté en mis notas.</span>
+      </div><div class="prompt-box mb-3">
+        <button class="copy-btn" onclick="copyPrompt(this)">Copiar</button>
+        <span class="tag">Bloque 1 · Estresa a tu cliente</span>
+        <span data-prompt>Estoy desarrollando <span class="placeholder-chip">[proyecto]</span>. Mi cliente objetivo es <span class="placeholder-chip">[cliente en 1 frase]</span>.<br>Actúa como consultor escéptico de Lean Startup:<br>1. Las 5 preguntas más incómodas para ver si mi cliente está mal definido o es demasiado abstracto.<br>2. 3 segmentos dentro de ese perfil que se comportarían de forma muy distinta.<br>3. 5 preguntas para una entrevista de descubrimiento.</span>
+      </div><div class="prompt-box mb-3">
+        <button class="copy-btn" onclick="copyPrompt(this)">Copiar</button>
+        <span class="tag">Bloque 2 · Tu buyer persona</span>
+        <span data-prompt>Con las notas de mis conversaciones, escribe mi buyer persona SOLO con lo que aparece en ellas. Si falta un dato, escribe «pendiente de preguntar»; no lo inventes.<br>Ficha: perfil, qué intenta conseguir, qué le frustra (con cita), cómo decide y quién paga, dónde la encuentro, qué le haría decir sí.</span>
+      </div><div class="prompt-box mb-3">
+        <button class="copy-btn" onclick="copyPrompt(this)">Copiar</button>
+        <span class="tag">Bloque 3 · Tu canvas y tu frase, actualizados</span>
+        <span data-prompt>Este es mi canvas de la sesión 1: <span class="placeholder-chip">[pégalo]</span>. Estas son mis notas de conversaciones: <span class="placeholder-chip">[pégalas]</span>. Dime:<br>1. Qué dolores supuse que no aparecen.<br>2. Qué dolores aparecieron y no tenía.<br>3. Qué parte de mi oferta no responde a ningún dolor real.<br>Luego propón mi canvas y mi frase actualizados: “Ayudo a <span class="placeholder-chip">[quién]</span> a <span class="placeholder-chip">[resultado]</span> sin <span class="placeholder-chip">[dolor]</span>, a diferencia de <span class="placeholder-chip">[alternativa]</span>.”</span>
+      </div><div class="prompt-box mb-3">
+        <button class="copy-btn" onclick="copyPrompt(this)">Copiar</button>
+        <span class="tag">Bloque 4 · Tu decisión tras la Test Card</span>
+        <span data-prompt>Mi Test Card era: <span class="placeholder-chip">[pégala]</span>. Resultado real: <span class="placeholder-chip">[tus números]</span>. Ayúdame a decidir: ¿se cumplió? ¿qué aprendí? ¿perseverar, ajustar, pivotar o parar?<br>Si es ajustar, propón UNA sola variable que cambiar y la nueva Test Card con un número.<br>Si los datos no apoyan mi idea, dímelo claro.</span>
+      </div>
+      </div>
+
+      <h3 class="text-lg font-bold mt-8 mb-3" style="color:#1e40af">Bloque 0 · Lo que me contó el mercado</h3>
+      <div class="field-block">
+        <label class="field-label">Mis patrones: lo que se repite en 3 o más conversaciones</label>
+        <textarea rows="3" data-field placeholder="Ej.: 3 de 5 no saben si su vídeo les trae reservas." oninput="markFilled(this);save()"></textarea><div class="hint">Si pasa en 1 sola, es una anécdota: apúntala aparte.</div>
+      </div>
+      <div class="field-block">
+        <label class="field-label">Lo que contradice mis hipótesis</label>
+        <textarea rows="2" data-field placeholder="Lo que dijeron que no esperaba o no encaja con lo que suponía." oninput="markFilled(this);save()"></textarea>
+      </div>
+      <div class="field-block">
+        <label class="field-label">El cliente más cercano a comprar, y por qué</label>
+        <textarea rows="2" data-field placeholder="Quién ya paga, ya mide o ya repite." oninput="markFilled(this);save()"></textarea>
+      </div>
+
+      <h3 class="text-lg font-bold mt-8 mb-3" style="color:#1e40af">Bloque 1 · Mi ICP (cliente ideal)</h3>
+      <div class="field-block">
+        <label class="field-label">Tipo y sector</label>
+        <textarea rows="2" data-field placeholder="¿Qué clase de cliente es?" oninput="markFilled(this);save()"></textarea>
+      </div>
+      <div class="field-block">
+        <label class="field-label">Tamaño y zona</label>
+        <textarea rows="2" data-field placeholder="Cubiertos, empleados, habitaciones. Dónde está." oninput="markFilled(this);save()"></textarea>
+      </div>
+      <div class="field-block">
+        <label class="field-label">Momento: el disparador de compra</label>
+        <textarea rows="2" data-field placeholder="¿Por qué compra ahora y no en otro momento?" oninput="markFilled(this);save()"></textarea>
+      </div>
+      <div class="field-block">
+        <label class="field-label">Capacidad de pago</label>
+        <textarea rows="2" data-field placeholder="¿Ya ha pagado algo parecido? ¿Cuánto?" oninput="markFilled(this);save()"></textarea>
+      </div>
+      <div class="rounded-2xl p-4 mb-4" style="background:rgba(78,84,245,0.06);border:1.5px dashed #4E54F5">
+        <label class="field-label" style="color:#4E54F5">★ Mi ICP en una frase</label>
+        <textarea rows="2" data-field placeholder="Restaurantes de 40-80 cubiertos del centro de Málaga, con temporada, que ya han pagado por vídeo." oninput="markFilled(this);save()" style="background:white"></textarea>
+      </div>
+      <div class="field-block">
+        <label class="field-label">Quien ve o usa · quien decide · quien paga</label>
+        <textarea rows="3" data-field placeholder="Pueden ser tres personas distintas. Escribe quién es cada una en tu caso." oninput="markFilled(this);save()"></textarea>
+      </div>
+
+      <h3 class="text-lg font-bold mt-8 mb-3" style="color:#1e40af">Bloque 2 · Mi buyer persona (solo con lo que oí)</h3>
+      <p class="text-sm text-slate-500 mb-4">Si no tienes un dato, escribe «pendiente de preguntar». Esa casilla es tu agenda de esta semana.</p>
+      <div class="field-block">
+        <label class="field-label">Perfil</label>
+        <textarea rows="2" data-field placeholder="Rol, negocio, tamaño. Sin nombre real." oninput="markFilled(this);save()"></textarea>
+      </div>
+      <div class="field-block">
+        <label class="field-label">Qué intenta conseguir</label>
+        <textarea rows="2" data-field placeholder="Su objetivo del trimestre." oninput="markFilled(this);save()"></textarea>
+      </div>
+      <div class="field-block">
+        <label class="field-label">Qué le frustra (con una cita literal)</label>
+        <textarea rows="2" data-field placeholder="“…” (conversación n.º)" oninput="markFilled(this);save()"></textarea>
+      </div>
+      <div class="field-block">
+        <label class="field-label">Cómo decide y quién paga</label>
+        <textarea rows="2" data-field placeholder="Quién decide, quién firma, cuánto tarda." oninput="markFilled(this);save()"></textarea>
+      </div>
+      <div class="field-block">
+        <label class="field-label">Dónde la encuentro</label>
+        <textarea rows="2" data-field placeholder="Dónde puedo hablar con ella esta semana." oninput="markFilled(this);save()"></textarea>
+      </div>
+      <div class="field-block">
+        <label class="field-label">Qué le haría decir sí</label>
+        <textarea rows="2" data-field placeholder="Lo que tendría que ver o recibir para comprar." oninput="markFilled(this);save()"></textarea>
+      </div>
+
+      <h3 class="text-lg font-bold mt-8 mb-3" style="color:#1e40af">Bloque 3 · Mi canvas, actualizado</h3>
+      <div class="field-block">
+        <label class="field-label">El dolor que suponía y no apareció</label>
+        <textarea rows="2" data-field placeholder="Si nadie lo mencionó en 5 conversaciones, probablemente no duele tanto." oninput="markFilled(this);save()"></textarea>
+      </div>
+      <div class="field-block">
+        <label class="field-label">El dolor que apareció y no tenía</label>
+        <textarea rows="2" data-field placeholder="Lo inesperado suele ser lo más valioso." oninput="markFilled(this);save()"></textarea>
+      </div>
+      <div class="field-block">
+        <label class="field-label">Lo que quito de mi oferta porque no responde a ningún dolor real</label>
+        <textarea rows="2" data-field placeholder="Aunque te guste, si no responde a nadie, sobra." oninput="markFilled(this);save()"></textarea>
+      </div>
+      <div class="rounded-2xl p-4 mb-4" style="background:rgba(78,84,245,0.06);border:1.5px dashed #4E54F5">
+        <label class="field-label" style="color:#4E54F5">★ Mi frase actualizada</label>
+        <textarea rows="2" data-field placeholder="Ayudo a [quién] a [resultado] sin [dolor], a diferencia de [alternativa]." oninput="markFilled(this);save()" style="background:white"></textarea>
+      </div>
+
+      <h3 class="text-lg font-bold mt-8 mb-3" style="color:#1e40af">Bloque 4 · Resultado de mi Test Card y mi decisión</h3>
+      <div class="field-block">
+        <label class="field-label">Resultado real (con números)</label>
+        <textarea rows="2" data-field placeholder="Contactados, respondieron, pidieron presupuesto…" oninput="markFilled(this);save()"></textarea>
+      </div>
+      <div class="field-block">
+        <label class="field-label">¿Se cumplió el número que escribí?</label>
+        <textarea rows="2" data-field placeholder="Sí o no, y por cuánto." oninput="markFilled(this);save()"></textarea>
+      </div>
+      <div class="field-block">
+        <label class="field-label">Qué aprendí del que sí avanzó</label>
+        <textarea rows="2" data-field placeholder="Qué tienen en común los que dijeron que sí." oninput="markFilled(this);save()"></textarea>
+      </div>
+      <div class="field-block">
+        <label class="field-label">Mi decisión: perseverar, ajustar, pivotar o parar</label>
+        <textarea rows="2" data-field placeholder="Una de las cuatro, y por qué." oninput="markFilled(this);save()"></textarea>
+      </div>
+      <div class="field-block">
+        <label class="field-label">La UNA cosa que cambio y repito</label>
+        <textarea rows="2" data-field placeholder="Una sola variable: el mensaje, el precio o el canal." oninput="markFilled(this);save()"></textarea>
+      </div>
+      <div class="field-block">
+        <label class="field-label">Mi nueva Test Card (con un número)</label>
+        <textarea rows="3" data-field placeholder="Creemos que… / Haremos… / Mediremos… / Estamos en lo cierto si…" oninput="markFilled(this);save()"></textarea>
+      </div>
+
+      <h3 class="text-lg font-bold mt-8 mb-3" style="color:#1e40af">Bloque 5 · Mesa de mentoría</h3>
+      <div class="field-block">
+        <label class="field-label">Mi compromiso para esta semana</label>
+        <textarea rows="2" data-field placeholder="Una acción concreta, con fecha." oninput="markFilled(this);save()"></textarea>
+      </div>
+
+      <h3 class="text-lg font-bold mt-8 mb-3" style="color:#9a3412">Tarea · Volver a la calle, pero mejor</h3>
+      <p class="text-sm text-slate-500 mb-4">5 conversaciones más, solo con clientes que encajen con tu ICP. Pregunta las casillas «pendiente de preguntar».</p>
+      <div class="field-block">
+        <label class="field-label">Mis preguntas pendientes para esta semana</label>
+        <textarea rows="3" data-field placeholder="Las casillas de mi buyer persona que quedaron en blanco." oninput="markFilled(this);save()"></textarea>
+      </div>
+      <div class="field-block">
+        <label class="field-label">Resumen de las 5 conversaciones nuevas (literal, sin interpretar)</label>
+        <textarea rows="5" data-field placeholder="Perfil · qué me contó · qué me sorprendió." oninput="markFilled(this);save()"></textarea>
+      </div>
+
+      <p class="text-sm text-slate-500 mb-3 mt-4">Cuando termines, pulsa <b>Guardar copia</b> (abajo a la derecha) y tráela a la próxima sesión.</p>
+    </div>
+  </section>
+</main>
+<div class="toast" id="toast"></div>
+<script>
+function save(){ updateProgress(); }
+function markFilled(el){ if(el.value.trim().length>0) el.classList.add('filled'); else el.classList.remove('filled'); }
+function updateProgress(){
+  let total=0, filled=0;
+  const per={};
+  document.querySelectorAll('section[data-day]').forEach(sec=>{
+    const d=sec.dataset.day; per[d]={t:0,f:0};
+    sec.querySelectorAll('[data-field]').forEach(f=>{ per[d].t++; total++; if(f.value.trim().length>0){ per[d].f++; filled++; } });
+  });
+  const pct=total?Math.round(filled/total*100):0;
+  document.getElementById('progressFill').style.width=pct+'%';
+  Object.keys(per).forEach(d=>{
+    const seal=document.getElementById('seal-'+d); if(!seal) return;
+    const x=per[d];
+    seal.textContent = (x.t>0 && x.f===x.t)?'✅':(x.f>0?'✍️':(d==='1'?'🔓':'🔒'));
+    const sec=document.querySelector('section[data-day="'+d+'"]');
+    if(d!=='1'){ sec.classList.toggle('locked', !(per['1'].f>0)); }
+  });
+  const lbl=document.getElementById('progressLabel');
+  if(pct===0) lbl.textContent='0% · empieza por tu idea';
+  else if(pct===100) lbl.textContent='100% · ¡ficha completa! 🎉';
+  else lbl.textContent=pct+'% · vas por buen camino';
+}
+function copyPrompt(btn){
+  const txt=btn.closest('.prompt-box').querySelector('[data-prompt]').innerText;
+  function ok(){ showToast('Prompt copiado. Pégalo en tu IA.'); btn.textContent='✓ Copiado'; setTimeout(()=>btn.textContent='Copiar',1800); }
+  function fallback(){
+    const ta=document.createElement('textarea'); ta.value=txt; ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.select();
+    try{ document.execCommand('copy'); ok(); }catch(e){ showToast('No se pudo copiar: selecciona el texto a mano.'); }
+    ta.remove();
+  }
+  if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(txt).then(ok).catch(fallback); } else { fallback(); }
+}
+function showToast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2400); }
+(function(){
+  const KEY='fichaValidacion_malaga_v1';
+  const all=()=>Array.from(document.querySelectorAll('textarea,input[type=text]'));
+  function persist(){ try{ localStorage.setItem(KEY, JSON.stringify(all().map(e=>e.value))); }catch(e){} }
+  function restore(){
+    let d=null; try{ d=JSON.parse(localStorage.getItem(KEY)||'null'); }catch(e){}
+    if(d){ all().forEach((e,i)=>{ if(d[i]!==undefined) e.value=d[i]; }); }
+    all().forEach(markFilled); updateProgress();
+  }
+  window.addEventListener('load', restore);
+  document.addEventListener('input', persist);
+  window.descargarFicha=function(){
+    let out='MI FICHA DE VALIDACIÓN · De la idea a la pantalla (Málaga)\n\n';
+    out+='Nombre: '+document.getElementById('ownerName').value+'\nProyecto: '+document.getElementById('bizName').value+'\n\n';
+    document.querySelectorAll('section[data-day] .field-block, section[data-day] .rounded-2xl > textarea').forEach(function(b){
+      const ta=b.tagName==='TEXTAREA'?b:b.querySelector('textarea'); if(!ta) return;
+      const lab=b.tagName==='TEXTAREA'?b.parentElement.querySelector('.field-label'):b.querySelector('.field-label');
+      out+=(lab?lab.textContent.trim():'Campo')+':\n'+ta.value+'\n\n';
+    });
+    const blob=new Blob([out],{type:'text/plain;charset=utf-8'});
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='mi-ficha-de-validacion.txt';
+    document.body.appendChild(a); a.click(); a.remove();
+  };
+})();
+</script>
+<button class="no-print" onclick="descargarFicha()" style="position:fixed;right:16px;bottom:16px;z-index:50;background:#059669;color:#fff;border:none;border-radius:999px;padding:12px 18px;font-weight:700;font-size:14px;box-shadow:0 4px 14px rgba(0,0,0,.2);cursor:pointer">⬇ Guardar copia (.txt)</button>
+</body>
+</html>
